@@ -1,8 +1,5 @@
-<h1><img src="https://raw.githubusercontent.com/aurbano/robinhood-node/master/.github/robinhood-node.png"/></h1>
+<h1><img src="https://raw.githubusercontent.com/jspenc72/robinhood-node/master/.github/robinhood-node.png"/></h1>
 
-[![Travis](https://img.shields.io/travis/aurbano/robinhood-node.svg?style=flat-square)](https://travis-ci.org/aurbano/robinhood-node)
-[![npm](https://img.shields.io/npm/v/robinhood.svg?style=flat-square)](https://www.npmjs.com/package/robinhood)
-[![David](https://img.shields.io/david/aurbano/Robinhood-Node.svg?style=flat-square)](https://david-dm.org/aurbano/robinhood-node)
 
 NodeJS Framework to make trades with the private [Robinhood](https://www.robinhood.com/) API. Using this API is not encouraged, since it's not officially available and it has been reverse engineered. See this [blog post](https://medium.com/@rohanpai25/reversing-robinhood-free-accessible-automated-stock-trading-f40fba1e7d8b) for more information on the API.
 
@@ -25,7 +22,7 @@ $ npm install robinhood2 --save
 ```js
 //The username and password you use to sign into the robinhood app.
 
-var credentials = { 
+var credentials = {
     username: '',
     password: ''
 };
@@ -93,7 +90,7 @@ var Robinhood = require('robinhood')(credentials, function(){
             console.log("instruments");
             console.log(body);
             //    { previous: null,
-            //      results: 
+            //      results:
             //       [ { min_tick_size: null,
             //           splits: 'https://api.robinhood.com/instruments/450dfc6d-5510-4d40-abfb-f633b7d9be3e/splits/',
             //           margin_initial_ratio: '0.5000',
@@ -144,7 +141,7 @@ var Robinhood = require('robinhood')(credentials, function(){
             //            adjusted_previous_close: String, // Float number in a String, e.g. '743.6200'
             //            previous_close_date: String, // YYYY-MM-DD e.g. '2016-01-06'
             //            symbol: String, // e.g. 'AAPL'
-            //            trading_halted: Boolean, 
+            //            trading_halted: Boolean,
             //            updated_at: String, // YYYY-MM-DDTHH:MM:SS e.g. '2016-01-07T21:00:00Z'
             //        }
             //    ]
@@ -165,7 +162,7 @@ var Robinhood = require('robinhood')(credentials, function(){
             console.log("accounts");
             console.log(body);
             //{ previous: null,
-            //  results: 
+            //  results:
             //   [ { deactivated: false,
             //       updated_at: '2016-03-11T20:37:15.971253Z',
             //       margin_balances: [Object],
@@ -255,7 +252,7 @@ Place a buy order on a specified stock.
 var Robinhood = require('robinhood')(credentials, function(){
     var options = {
         type: 'limit',
-        quantity: 1, 
+        quantity: 1,
         bid_price: 1.00,
         instrument: {
             url: String,
@@ -308,7 +305,7 @@ Place a sell order on a specified stock.
 var Robinhood = require('robinhood')(credentials, function(){
     var options = {
         type: 'limit',
-        quantity: 1, 
+        quantity: 1,
         bid_price: 1.00,
         instrument: {
             url: String,
@@ -409,7 +406,7 @@ var Robinhood = require('robinhood')(credentials, function(){
                 }else{
                     //Success
 
-                    console.log("Cancel Order Successful"); 
+                    console.log("Cancel Order Successful");
                     console.log(body)       //{}
                 }
             })
@@ -429,7 +426,7 @@ var Robinhood = require('robinhood')(credentials, function(){
             console.log(body);
 
             //{ previous: null,
-            //  results: 
+            //  results:
             //   [ { url: 'https://api.robinhood.com/watchlists/Default/',
             //       user: 'https://api.robinhood.com/user/',
             //      name: 'Default' } ],
@@ -470,7 +467,7 @@ var Robinhood = require('robinhood')(credentials, function(){
             //{ count: 10,
             //  next: null,
             //  previous: null,
-            //  results: 
+            //  results:
             //   [ { instrument_url: 'https://api.robinhood.com/instruments/adbc3ce0-dd0d-4a7a-92e0-88c1f127cbcb/',
             //       symbol: 'NEM',
             //       updated_at: '2016-09-21T13:03:32.310184Z',
@@ -500,7 +497,7 @@ var Robinhood = require('robinhood')(credentials, function(){
             //{ count: 10,
             //  next: null,
             //  previous: null,
-            //  results: 
+            //  results:
             //   [ { instrument_url: 'https://api.robinhood.com/instruments/adbc3ce0-dd0d-4a7a-92e0-88c1f127cbcb/',
             //       symbol: 'NEM',
             //       updated_at: '2016-09-21T13:03:32.310184Z',
@@ -546,7 +543,7 @@ var Robinhood = require('robinhood')(credentials, function(){
             console.error(err);
         }else{
             console.log("got historicals");
-            console.log(body); 
+            console.log(body);
             //             
             //    { quote: 'https://api.robinhood.com/quotes/AAPL/',
             //      symbol: 'AAPL',
@@ -554,7 +551,7 @@ var Robinhood = require('robinhood')(credentials, function(){
             //      span: 'week',
             //      bounds: 'regular',
             //      previous_close: null,
-            //      historicals: 
+            //      historicals:
             //       [ { begins_at: '2016-09-15T13:30:00Z',
             //           open_price: '113.8300',
             //           close_price: '114.1700',
@@ -571,7 +568,7 @@ var Robinhood = require('robinhood')(credentials, function(){
             //           volume: 2166098,
             //           session: 'reg',
             //           interpolated: false },
-            //         ... 290 more items 
+            //         ... 290 more items
             //      ]}
             //
         }
@@ -581,7 +578,7 @@ var Robinhood = require('robinhood')(credentials, function(){
 
 # Contributors
 
-*** Alejandro U. Alvarez ([@aurbano](https://github.com/aurbano)) 
+*** Alejandro U. Alvarez ([@aurbano](https://github.com/aurbano))
 ------------------
 * Jesse Spencer ([@Jspenc72](https://github.com/jspenc72))
 * Justin Keller ([@nodesocket](https://github.com/nodesocket))
