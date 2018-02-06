@@ -2,54 +2,61 @@
  * Robinhood API NodeJS Wrapper
  * @author Alejandro U. Alvarez
  * @license AGPLv3 - See LICENSE file for more details
+ * @version 1.1.2
  */
 
 'use strict';
 
 // Dependencies
 var request = require('request');
+var Promise = require('promise');
+var _ = require('lodash');
+var queryString = require('query-string');
 
 function RobinhoodWebApi(opts, callback) {
 
   /* +--------------------------------+ *
    * |      Internal variables        | *
    * +--------------------------------+ */
+  var _apiUrl = 'https://api.robinhood.com/';
+
   var _options = opts || {},
       // Private API Endpoints
       _endpoints = {
-        login:  'https://api.robinhood.com/api-token-auth/',
-        investment_profile: 'https://api.robinhood.com/user/investment_profile/',
-        accounts: 'https://api.robinhood.com/accounts/',
-        ach_iav_auth: 'https://api.robinhood.com/ach/iav/auth/',
-        ach_relationships:  'https://api.robinhood.com/ach/relationships/',
-        ach_transfers:'https://api.robinhood.com/ach/transfers/',
-        ach_deposit_schedules: "https://api.robinhood.com/ach/deposit_schedules/",
-        applications: 'https://api.robinhood.com/applications/',
-        dividends:  'https://api.robinhood.com/dividends/',
-        edocuments: 'https://api.robinhood.com/documents/',
-        instruments:  'https://api.robinhood.com/instruments/',
-        margin_upgrade:  'https://api.robinhood.com/margin/upgrades/',
-        markets:  'https://api.robinhood.com/markets/',
-        notifications:  'https://api.robinhood.com/notifications/',
-        notifications_devices: "https://api.robinhood.com/notifications/devices/",
-        orders: 'https://api.robinhood.com/orders/',
-        cancel_order: 'https://api.robinhood.com/orders/',      //API expects https://api.robinhood.com/orders/{{orderId}}/cancel/
-        password_reset: 'https://api.robinhood.com/password_reset/request/',
-        quotes: 'https://api.robinhood.com/quotes/',
-        document_requests:  'https://api.robinhood.com/upload/document_requests/',
-        user: 'https://api.robinhood.com/user/',
+        login:  'api-token-auth/',
+        logout: 'api-token-logout/',
+        investment_profile: 'user/investment_profile/',
+        accounts: 'accounts/',
+        ach_iav_auth: 'ach/iav/auth/',
+        ach_relationships:  'ach/relationships/',
+        ach_transfers:'ach/transfers/',
+        ach_deposit_schedules: "ach/deposit_schedules/",
+        applications: 'applications/',
+        dividends:  'dividends/',
+        edocuments: 'documents/',
+        instruments:  'instruments/',
+        margin_upgrade:  'margin/upgrades/',
+        markets:  'markets/',
+        notifications:  'notifications/',
+        notifications_devices: "notifications/devices/",
+        orders: 'orders/',
+        cancel_order: 'orders/',      //API expects https://api.robinhood.com/orders/{{orderId}}/cancel/
+        password_reset: 'password_reset/request/',
+        quotes: 'quotes/',
+        document_requests:  'upload/document_requests/',
+        user: 'user/',
 
-        user_additional_info: "https://api.robinhood.com/user/additional_info/",
-        user_basic_info: "https://api.robinhood.com/user/basic_info/",
-        user_employment: "https://api.robinhood.com/user/employment/",
-        user_investment_profile: "https://api.robinhood.com/user/investment_profile/",
+        user_additional_info: "user/additional_info/",
+        user_basic_info: "user/basic_info/",
+        user_employment: "user/employment/",
+        user_investment_profile: "user/investment_profile/",
 
-        watchlists: 'https://api.robinhood.com/watchlists/',
-        positions: 'https://api.robinhood.com/positions/',
-        fundamentals: 'https://api.robinhood.com/fundamentals/',
-        sp500_up: 'https://api.robinhood.com/midlands/movers/sp500/?direction=up',
-        sp500_down: 'https://api.robinhood.com/midlands/movers/sp500/?direction=down',  
-        news: 'https://api.robinhood.com/midlands/news/'
+        watchlists: 'watchlists/',
+        positions: 'positions/',
+        fundamentals: 'fundamentals/',
+        sp500_up: 'midlands/movers/sp500/?direction=up',
+        sp500_down: 'midlands/movers/sp500/?direction=down',
+        news: 'midlands/news/'
     },
     _isInit = false,
     _request = request.defaults(),
@@ -64,25 +71,36 @@ function RobinhoodWebApi(opts, callback) {
     api = {};
 
   function _init(){
-    _private.username = _options.username;
-    _private.password = _options.password;
+    _private.username = _.has(_options, 'username') ? _options.username : null;
+    _private.password = _.has(_options, 'password') ? _options.password : null;
+    _private.auth_token = _.has(_options, 'token') ? _options.token : null;
     _private.headers = {
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate',
         'Accept-Language': 'en;q=1, fr;q=0.9, de;q=0.8, ja;q=0.7, nl;q=0.6, it;q=0.5',
         'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
-        'X-Robinhood-API-Version': '1.0.0',
         'Connection': 'keep-alive',
-        'User-Agent': 'Robinhood/823 (iPhone; iOS 7.1.2; Scale/2.00)'
+        'X-Robinhood-API-Version': '1.152.0',
+        'User-Agent': 'Robinhood/5.32.0 (com.robinhood.release.Robinhood; build:3814; iOS 10.3.3)'
     };
     _setHeaders();
-    _login(function(){
-      _isInit = true;
+    if (!_private.auth_token) {
+      _login(function(){
+        _isInit = true;
 
-      if (callback) {
+        if (callback) {
+          callback.call();
+        }
+      });
+    } else {
+      _build_auth_header(_private.auth_token);
+      _setHeaders();
+      _set_account().then(function() {
         callback.call();
-      }
-    });
+      }).catch(function(err) {
+        throw (err);
+      });
+    }
   }
 
   function _setHeaders(){
@@ -95,7 +113,7 @@ function RobinhoodWebApi(opts, callback) {
 
   function _login(callback){
     _request.post({
-      uri: _endpoints.login,
+      uri: _apiUrl + _endpoints.login,
       form: {
         password: _private.password,
         username: _private.username
@@ -106,44 +124,69 @@ function RobinhoodWebApi(opts, callback) {
       }
 
       _private.auth_token = body.token;
-      _private.headers.Authorization = 'Token ' + _private.auth_token;
+      _build_auth_header(_private.auth_token);
 
       _setHeaders();
 
       // Set account
+      _set_account().then(function() {
+        callback.call();
+      }).catch(function(err) {
+        throw (err);
+      })
+    });
+  }
+
+  function _set_account() {
+    return new Promise(function(resolve, reject) {
       api.accounts(function(err, httpResponse, body) {
         if (err) {
-          throw (err);
+          reject(err);
         }
-
-        if (body.results) {
+        // Being defensive when user credentials are valid but RH has not approved an account yet
+        if (body.results && body.results instanceof Array && body.results.length > 0) {
           _private.account = body.results[0].url;
         }
-
-        callback.call();
+        resolve();
       });
     });
+  }
+
+  function _build_auth_header(token) {
+    _private.headers.Authorization = 'Token ' + token;
   }
 
   /* +--------------------------------+ *
    * |      Define API methods        | *
    * +--------------------------------+ */
+  api.auth_token = function() {
+    return _private.auth_token;
+  };
+
+  // Invoke robinhood logout.  Note: User will need to reintantiate
+  // this package to get a new token!
+  api.expire_token = function(callback) {
+    return _request.post({
+      uri: _apiUrl + _endpoints.logout
+    }, callback);
+  };
+
   api.investment_profile = function(callback){
     return _request.get({
-        uri: _endpoints.investment_profile
+        uri: _apiUrl + _endpoints.investment_profile
       }, callback);
   };
 
   api.fundamentals = function(ticker, callback){
     return _request.get({
-        uri: _endpoints.fundamentals,
+        uri: _apiUrl + _endpoints.fundamentals,
         qs: { 'symbols': ticker }
       }, callback);
   };
 
   api.instruments = function(symbol, callback){
     return _request.get({
-        uri: _endpoints.instruments,
+        uri: _apiUrl + _endpoints.instruments,
         qs: {'query': symbol.toUpperCase()}
       }, callback);
   };
@@ -151,32 +194,51 @@ function RobinhoodWebApi(opts, callback) {
   api.quote_data = function(symbol, callback){
     symbol = Array.isArray(symbol) ? symbol = symbol.join(',') : symbol;
     return _request.get({
-        uri: _endpoints.quotes,
+        uri: _apiUrl + _endpoints.quotes,
         qs: { 'symbols': symbol.toUpperCase() }
       }, callback);
   };
 
   api.accounts= function(callback){
     return _request.get({
-      uri: _endpoints.accounts
+      uri: _apiUrl + _endpoints.accounts
     }, callback);
   };
 
   api.user = function(callback){
     return _request.get({
-      uri: _endpoints.user
+      uri: _apiUrl + _endpoints.user
     }, callback);
   };
 
   api.dividends = function(callback){
     return _request.get({
-      uri: _endpoints.dividends
+      uri: _apiUrl + _endpoints.dividends
     }, callback);
   };
 
-  api.orders = function(callback){
+  api.orders = function(){
+    var options = {}, callback = new Function(), args = _.values(arguments), id = null;
+    args.forEach(function(arg) {
+      if (typeof arg === 'function') callback = arg;
+      if (typeof arg === 'string') id = arg;
+      if (typeof arg === 'object') options = arg;     // Keep in mind, instrument option must be the full instrument url!
+    });
+
+    var hasId = typeof id !== "undefined";
+    var hasOptions = _.keys(options).length > 0;
+
+    if(hasId && hasOptions){ // remove ambiguitiy from choosing both an id and options
+      console.warn("Warning : both id and options were defined for robinhood.orders(). Options are mutually exclusive. Defaulting to id only.");
+      hasOptions = false;
+    }
+
+    if (hasOptions) {
+      options['updated_at[gte]'] = options.updated_at;
+      _.unset(options, 'updated_at');
+    }
     return _request.get({
-      uri: _endpoints.orders
+      uri: _apiUrl + _endpoints.orders + (hasId ? id + "/" : "") + (hasOptions ? '?' + queryString.stringify(options) : '')
     }, callback);
   };
 
@@ -184,7 +246,7 @@ function RobinhoodWebApi(opts, callback) {
     if(order.cancel){
       return _request.post({
         uri: order.cancel
-      }, callback);      
+      }, callback);
     }else{
       callback({message: order.state=="cancelled" ? "Order already cancelled." : "Order cannot be cancelled.", order: order }, null, null);
     };
@@ -192,7 +254,7 @@ function RobinhoodWebApi(opts, callback) {
 
   var _place_order = function(options, callback){
     return _request.post({
-        uri: _endpoints.orders,
+        uri: _apiUrl + _endpoints.orders,
         form: {
           account: _private.account,
           instrument: options.instrument.url,
@@ -220,37 +282,44 @@ function RobinhoodWebApi(opts, callback) {
 
   api.positions = function(callback){
     return _request.get({
-      uri: _endpoints.positions
+      uri: _apiUrl + _endpoints.positions
+    }, callback);
+  };
+
+  api.nonzero_positions = function(callback){
+    return _request.get({
+      uri: _apiUrl + _endpoints.positions,
+      qs: {nonzero: true}
     }, callback);
   };
 
   api.news = function(symbol, callback){
     return _request.get({
-      uri: [_endpoints.news,'/'].join(symbol)
+      uri: _apiUrl + [_endpoints.news,'/'].join(symbol)
     }, callback);
-  };  
+  };
 
   api.markets = function(callback){
     return _request.get({
-      uri: _endpoints.markets
+      uri: _apiUrl + _endpoints.markets
     }, callback);
   };
 
   api.sp500_up = function(callback){
     return _request.get({
-      uri: _endpoints.sp500_up
+      uri: _apiUrl + _endpoints.sp500_up
     }, callback);
   };
-  
+
   api.sp500_down = function(callback){
     return _request.get({
-      uri: _endpoints.sp500_down
+      uri: _apiUrl + _endpoints.sp500_down
     }, callback);
   };
 
   api.create_watch_list = function(name, callback){
     return _request.post({
-        uri: _endpoints.watchlists,
+        uri: _apiUrl + _endpoints.watchlists,
         form: {
           name: name
         }
@@ -259,20 +328,26 @@ function RobinhoodWebApi(opts, callback) {
 
   api.watchlists = function(callback){
     return _request.get({
-        uri: _endpoints.watchlists
+        uri: _apiUrl + _endpoints.watchlists
       }, callback);
   };
 
   api.splits = function(instrument, callback){
     return _request.get({
-        uri: [_endpoints.instruments,'/splits/'].join(instrument)
+        uri: _apiUrl + [_endpoints.instruments,'/splits/'].join(instrument)
       }, callback);
   };
 
   api.historicals = function(symbol, intv, span, callback){
     return _request.get({
-        uri: [_endpoints.quotes + 'historicals/','/?interval='+intv+'&span='+span].join(symbol)
+        uri: _apiUrl + [_endpoints.quotes + 'historicals/','/?interval='+intv+'&span='+span].join(symbol)
       }, callback);
+  };
+
+  api.url = function (url,callback){
+    return _request.get({
+      uri:url
+    },callback);
   };
 
   _init(_options);

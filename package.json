@@ -1,10 +1,10 @@
 {
   "name": "robinhood2",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "Comprehensive NodeJS API wrapper for the Robinhood API",
   "main": "src/robinhood.js",
   "scripts": {
-    "test": "mocha test --recursive"
+    "test": "nyc ava"
   },
   "repository": {
     "type": "git",
@@ -17,9 +17,9 @@
     "stock",
     "finance"
   ],
-  "author": { 
-    "name" : "Jesse Spencer", 
-    "email" : "jesse@cindt.com", 
+  "author": {
+    "name" : "Jesse Spencer",
+    "email" : "jesse@cindt.com",
     "url" : "https://github.com/jspenc72"
   },
   "license": "AGPLv3",
@@ -28,10 +28,15 @@
   },
   "homepage": "https://github.com/jspenc72/robinhood-node",
   "devDependencies": {
-    "mocha": "^2.0.1",
-    "should": "^4.3.0"
+    "ava": "^0.17.0",
+    "coveralls": "^2.11.15",
+    "nyc": "^10.0.0"
   },
   "dependencies": {
-    "request": "2.69.0"
+    "lodash": "^4.17.4",
+    "promise": "^7.1.1",
+    "request": "^2.79.0",
+    "should": "^11.1.1",
+    "query-string": "^4.3.2"
   }
 }

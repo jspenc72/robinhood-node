@@ -1,24 +1,69 @@
 <h1><img src="https://raw.githubusercontent.com/jspenc72/robinhood-node/master/.github/robinhood-node.png"/></h1>
 
+[![Travis](https://img.shields.io/travis/aurbano/robinhood-node.svg?style=flat-square)](https://travis-ci.org/aurbano/robinhood-node)
+[![npm](https://img.shields.io/npm/v/robinhood.svg?style=flat-square)](https://www.npmjs.com/package/robinhood)
+[![David](https://img.shields.io/david/aurbano/Robinhood-Node.svg?style=flat-square)](https://david-dm.org/aurbano/robinhood-node)
+[![npm](https://img.shields.io/npm/dm/robinhood.svg)](https://www.npmjs.com/package/robinhood)
+[![Coverage Status](https://coveralls.io/repos/github/aurbano/robinhood-node/badge.svg?branch=master)](https://coveralls.io/github/aurbano/robinhood-node?branch=master)
 
-NodeJS Framework to make trades with the private [Robinhood](https://www.robinhood.com/) API. Using this API is not encouraged, since it's not officially available and it has been reverse engineered. See this [blog post](https://medium.com/@rohanpai25/reversing-robinhood-free-accessible-automated-stock-trading-f40fba1e7d8b) for more information on the API.
+NodeJS Framework to make trades with the private [Robinhood](https://www.robinhood.com/) API. Using this API is not encouraged, since it's not officially available and it has been reverse engineered.
+See @Sanko's [Unofficial Documentation](https://github.com/sanko/Robinhood) for more information.
 
 FYI [Robinhood's Terms and Conditions](https://brokerage-static.s3.amazonaws.com/assets/robinhood/legal/Robinhood%20Terms%20and%20Conditions.pdf)
-> This framework is based on a less active javascript framework created by [@aurbano](https://github.com/aurbano) that was originally based on a deprecated Python framework originally developed by [@Rohanpai](https://github.com/rohanpai).
 
+<!-- toc -->
+  * [Features](#features)
+  * [Installation](#installation)
+  * [Usage](#usage)
+  * [API](#api)
+    * [`auth_token()`](#auth_token)
+    * [`expire_token(callback)`](#expire_token)
+    * [`investment_profile(callback)`](#investment_profilecallback)
+    * [`instruments(symbol, callback)`](#instrumentssymbol-callback)
+    * [`quote_data(stock, callback) // Not authenticated`](#quote-datastock-callback-not-authenticated)
+    * [`accounts(callback)`](#accountscallback)
+    * [`user(callback)`](#usercallback)
+    * [`dividends(callback)`](#dividendscallback)
+    * [`orders(options, callback)`](#ordersoptions-callback)
+    * [`positions(callback)`](#positionscallback)
+    * [`nonzero_positions(callback)`](#nonzero_positionscallback)
+    * [`place_buy_order(options, callback)`](#place-buy-orderoptions-callback)
+      * [`trigger`](#trigger)
+      * [`time`](#time)
+    * [`place_sell_order(options, callback)`](#place-sell-orderoptions-callback)
+      * [`trigger`](#trigger)
+      * [`time`](#time)
+    * [`fundamentals(symbol, callback)`](#fundamentalssymbol-callback)
+      * [Response](#response)
+    * [`cancel_order(order, callback)`](#cancel-orderorder-callback)
+    * [`watchlists(name, callback)`](#watchlistsname-callback)
+    * [`create_watch_list(name, callback)`](#create-watch-listname-callback)
+    * [`sp500_up(callback)`](#sp500-upcallback)
+    * [`sp500_down(callback)`](#sp500-downcallback)
+    * [`splits(instrument, callback)`](#splitsinstrument-callback)
+    * [`historicals(symbol, intv, span, callback)`](#historicalssymbol-intv-span-callback)
+    * [`url(url, callback)`](#urlurl-callback)
+* [Contributors](#contributors)
+
+<!-- toc stop -->
 ## Features
 * Quote Data
 * Buy, Sell Orders
 * Daily Fundamentals
 * Daily, Weekly, Monthly Historicals
 
+> Tested on the latest versions of Node 6, 7 & 8.
+
 ## Installation
 ```bash
-$ npm install robinhood2 --save
+$ npm install robinhood --save
 ```
 
 ## Usage
 
+To authenticate, you can either use your username and password to the Robinhood app or a previously authenticated Robinhood api token:
+
+### Username & Password
 ```js
 //The username and password you use to sign into the robinhood app.
 
@@ -26,7 +71,18 @@ var credentials = {
     username: '',
     password: ''
 };
+```
 
+### Robinhood API Auth Token
+```js
+//A previously authenticated Robinhood API auth token
+
+var credentials = {
+    token: ''
+};
+```
+
+```js
 var Robinhood = require('robinhood')(credentials, function(){
 
     //Robinhood is connected and you may begin sending commands to the api.
@@ -45,6 +101,36 @@ var Robinhood = require('robinhood')(credentials, function(){
 ## API
 
 Before using these methods, make sure you have initialized Robinhood using the snippet above.
+
+### `auth_token()`
+Get the current authenticated Robinhood api authentication token
+
+```typescript
+var credentials = require("../credentials.js")();
+var Robinhood = require('robinhood')(credentials, function(){
+    console.log(Robinhood.auth_token());
+        //      <authenticated alphanumeric token>
+}
+```
+
+### `expire_token()`
+Expire the current authenticated Robinhood api token (logout).
+
+> **NOTE:** After expiring a token you will need to reinstantiate the package with username & password in order to get a new token!
+
+```typescript
+var credentials = require("../credentials.js")();
+var Robinhood = require('robinhood')(credentials, function(){
+    Robinhood.expire_token(function(err, response, body){
+        if(err){
+            console.error(err);
+        }else{
+            console.log("Successfully logged out of Robinhood and expired token.");
+            // NOTE: body is undefined on the callback
+        }
+    })
+});
+```
 
 ### `investment_profile(callback)`
 Get the current user's investment profile.
@@ -229,12 +315,24 @@ var Robinhood = require('robinhood')(credentials, function(){
 ```
 
 
-### `orders(callback)`
+### `orders(options, callback)`
 
 Get the user's orders information.
+
+#### Retreive a set of orders
+Send options hash (optional) to limit to specific instrument and/or earliest date of orders.
+
+```typescript
+// optional options hash.  If no hash is sent, all orders will be returned.
+let options = {
+    updated_at: '2017-08-25',
+    instrument: 'https://api.robinhood.com/instruments/df6c09dc-bb4f-4495-8c59-f13e6eb3641f/'
+}
+```
+
 ```typescript
 var Robinhood = require('robinhood')(credentials, function(){
-    Robinhood.orders(function(err, response, body){
+    Robinhood.orders(options, function(err, response, body){
         if(err){
             console.error(err);
         }else{
@@ -244,6 +342,58 @@ var Robinhood = require('robinhood')(credentials, function(){
     })
 });
 ```
+
+#### Retreive a particular order
+Send the id of the order to retreive the data for a specific order.
+```typescript
+let order_id = "string_identifier"; // e.g., id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+```
+
+```typescript
+var Robinhood = require('robinhood')(credentials, function(){
+    Robinhood.orders(order_id, function(err, response, body){
+        if(err){
+            console.error(err);
+        }else{
+            console.log("order");
+            console.log(body);
+        }
+    })
+});
+```
+
+### `positions(callback)`
+
+Get the user's position information.
+```typescript
+var Robinhood = require('robinhood')(credentials, function(){
+    Robinhood.positions(function(err, response, body){
+        if (err){
+            console.erro(err);
+        }else{
+            console.log("positions");
+            console.log(body);
+        }
+    });
+});
+```
+
+### `nonzero_positions(callback)`
+
+Get the user's nonzero position information only.
+```typescript
+var Robinhood = require('robinhood')(credentials, function(){
+    Robinhood.nonzero_positions(function(err, response, body){
+        if (err){
+            console.erro(err);
+        }else{
+            console.log("positions");
+            console.log(body);
+        }
+    });
+});
+```
+
 ### `place_buy_order(options, callback)`
 
 Place a buy order on a specified stock.
@@ -531,7 +681,7 @@ var Robinhood = require('robinhood')(credentials, function(){
 })
 ```
 
-### `historicals(symbol, intv, span, callback)`    
+### `historicals(symbol, intv, span, callback)`
 
 ```typescript
 var Robinhood = require('robinhood')(credentials, function(){
@@ -544,7 +694,67 @@ var Robinhood = require('robinhood')(credentials, function(){
         }else{
             console.log("got historicals");
             console.log(body);
-            //             
+            //
+            //    { quote: 'https://api.robinhood.com/quotes/AAPL/',
+            //      symbol: 'AAPL',
+            //      interval: '5minute',
+            //      span: 'week',
+            //      bounds: 'regular',
+            //      previous_close: null,
+            //      historicals:
+            //       [ { begins_at: '2016-09-15T13:30:00Z',
+            //           open_price: '113.8300',
+            //           close_price: '114.1700',
+            //           high_price: '114.3500',
+            //           low_price: '113.5600',
+            //           volume: 3828122,
+            //           session: 'reg',
+            //           interpolated: false },
+            //         { begins_at: '2016-09-15T13:35:00Z',
+            //           open_price: '114.1600',
+            //           close_price: '114.3800',
+            //           high_price: '114.7300',
+            //           low_price: '114.1600',
+            //           volume: 2166098,
+            //           session: 'reg',
+            //           interpolated: false },
+            //         ... 290 more items
+            //      ]}
+            //
+        }
+    })
+})
+```
+### `splits(instrument, callback)`
+
+```typescript
+var Robinhood = require('robinhood')(credentials, function(){
+
+    Robinhood.splits("7a3a677d-1664-44a0-a94b-3bb3d64f9e20", function(err, response, body){
+        if(err){
+            console.error(err);
+        }else{
+            console.log("got splits");
+            console.log(body);   //{ previous: null, results: [], next: null }
+        }
+    })
+})
+```
+
+### `historicals(symbol, intv, span, callback)`
+
+```typescript
+var Robinhood = require('robinhood')(credentials, function(){
+
+    //{interval=5minute|10minute (required) span=week|day| }
+
+    Robinhood.historicals("AAPL", '5minute', 'week', function(err, response, body){
+        if(err){
+            console.error(err);
+        }else{
+            console.log("got historicals");
+            console.log(body);
+            //
             //    { quote: 'https://api.robinhood.com/quotes/AAPL/',
             //      symbol: 'AAPL',
             //      interval: '5minute',
@@ -576,9 +786,19 @@ var Robinhood = require('robinhood')(credentials, function(){
 })
 ```
 
+### `url(url, callback)`
+
+`url` is used to get continued or paginated data from the API. Queries with long results return a reference to the next sete. Example -
+
+```
+next: 'https://api.robinhood.com/orders/?cursor=cD0yMD82LTA0LTAzKzkwJVNCNTclM0ExNC45MzYyKDYlMkIwoCUzqtAW' }
+```
+
+The url returned can be passed to the `url` method to continue getting the next set of results.
+
 # Contributors
 
-*** Alejandro U. Alvarez ([@aurbano](https://github.com/aurbano))
+Alejandro U. Alvarez ([@aurbano](https://github.com/aurbano))
 ------------------
 * Jesse Spencer ([@Jspenc72](https://github.com/jspenc72))
 * Justin Keller ([@nodesocket](https://github.com/nodesocket))
@@ -589,6 +809,14 @@ var Robinhood = require('robinhood')(credentials, function(){
 * Zaheen ([@z123](https://github.com/z123))
 * Chris Busse ([@busse](https://github.com/busse))
 * Jason Truluck ([@jasontruluck](https://github.com/jasontruluck))
+* Matthew Herron ([@swimclan](https://github.com/swimclan))
+
+------------------
+
+# Related Projects
+
+* [robinhood-ruby](https://github.com/rememberlenny/robinhood-ruby) - RubyGem for interacting with Robinhood API
+* [robinhood Python](https://github.com/Jamonek/Robinhood) - Python Framework to make trades with Robinhood Private API
 
 ------------------
 
